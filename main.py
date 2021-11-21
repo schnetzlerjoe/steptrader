@@ -86,6 +86,7 @@ while True:
             success = execute_js('index.js', "buy")
             print(success)
             newAction = [df["timestamp"][len(df) - 1], "buy", df["close"][len(df) - 1], ""]
+            actionTable.add_row(newAction)
             purchase_date = df["timestamp"][len(df) - 1]
             current = df["close"][len(df) - 1]
 
