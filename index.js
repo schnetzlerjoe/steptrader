@@ -25,6 +25,7 @@ const swap = async (recieveTokenB = false, giveTokenIsSOL = false, pool, orca, c
     }
 
     var giveAmount;
+    var tokenAmount;
     if(giveTokenIsSOL) {
       const solLamportAmount = await connection.getBalance(owner.publicKey)
       const solBalance = await solLamportAmount * 0.000000001
@@ -32,17 +33,22 @@ const swap = async (recieveTokenB = false, giveTokenIsSOL = false, pool, orca, c
       giveAmount = new Decimal(maxSolTradeAmount);
     } else {
       const tokenInfo = await connection.getParsedTokenAccountsByOwner(owner.publicKey, {mint: giveToken.mint}, {encoding: "jsonParsed"})
-      const tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+      tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
       giveAmount = new Decimal(tokenAmount);
     }
     const quote = await pool.getQuote(giveToken, giveAmount);
     const recieveAmount = quote.getMinOutputAmount();
 
-    console.log(`Swap ${giveAmount.toString()} ${giveToken.name} for at least ${recieveAmount.toNumber()} ${recieveToken.name}`);
-    const swapPayload = await pool.swap(owner, giveToken, giveAmount, recieveAmount);
-    const swapTxId = await swapPayload.execute();
-    console.log("Swapped:", swapTxId, "\n");
-    return swapTxId;
+    if(tokenAmount >= 1) {
+      console.log("Token already owned.")
+      return;
+    } else {
+      console.log(`Swap ${giveAmount.toString()} ${giveToken.name} for at least ${recieveAmount.toNumber()} ${recieveToken.name}`);
+      const swapPayload = await pool.swap(owner, giveToken, giveAmount, recieveAmount);
+      const swapTxId = await swapPayload.execute();
+      console.log("Swapped:", swapTxId, "\n");
+      return swapTxId;
+    }
   } catch (err) {
     console.warn(err);
   }
