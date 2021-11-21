@@ -93,4 +93,4 @@ while True:
     print(actionTable)
     print(returnTable)
     print("\n")
-    time.sleep(30*60)
+    time.sleep(5*60)
