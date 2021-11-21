@@ -65,8 +65,8 @@ while True:
         if df["timestamp"][len(df) - 1] > (purchase_date + datetime.timedelta(days=1)):
             success = execute_js('index.js', "sell")
             print(success)
-            newAction = [df["timestamp"][len(df) - 1], "sell", df["close"][len(df) - 1], "Held to long."]
-            returnAction = [df["timestamp"][len(df) - 1], (df["close"][len(df) - 1]/current) - 1]
+            newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], "Held to long."]
+            returnAction = [datetime.datetime.today(), (df["close"][len(df) - 1]/current) - 1]
             actionTable.add_row(newAction)
             returnTable.add_row(returnAction)
             print("Held to long")
@@ -75,8 +75,8 @@ while True:
         if current != None:
             success = execute_js('index.js', "sell")
             print(success)
-            newAction = [df["timestamp"][len(df) - 1], "sell", df["close"][len(df) - 1], ""]
-            returnAction = [df["timestamp"][len(df) - 1], (df["close"][len(df) - 1]/current) - 1]
+            newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], ""]
+            returnAction = [datetime.datetime.today(), (df["close"][len(df) - 1]/current) - 1]
             actionTable.add_row(newAction)
             returnTable.add_row(returnAction)
             purchase_date = None
@@ -85,7 +85,7 @@ while True:
         if current == None:
             success = execute_js('index.js', "buy")
             print(success)
-            newAction = [df["timestamp"][len(df) - 1], "buy", df["close"][len(df) - 1], ""]
+            newAction = [datetime.datetime.today(), "buy", df["close"][len(df) - 1], ""]
             actionTable.add_row(newAction)
             purchase_date = df["timestamp"][len(df) - 1]
             current = df["close"][len(df) - 1]
