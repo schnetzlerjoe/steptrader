@@ -25,7 +25,6 @@ const swap = async (recieveTokenB = false, giveTokenIsSOL = false, pool, orca, c
     }
 
     var giveAmount;
-    var tokenAmount;
     if(giveTokenIsSOL) {
       const solLamportAmount = await connection.getBalance(owner.publicKey)
       const solBalance = await solLamportAmount * 0.000000001
@@ -33,22 +32,17 @@ const swap = async (recieveTokenB = false, giveTokenIsSOL = false, pool, orca, c
       giveAmount = new Decimal(maxSolTradeAmount);
     } else {
       const tokenInfo = await connection.getParsedTokenAccountsByOwner(owner.publicKey, {mint: giveToken.mint}, {encoding: "jsonParsed"})
-      tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+      const tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
       giveAmount = new Decimal(tokenAmount);
     }
     const quote = await pool.getQuote(giveToken, giveAmount);
     const recieveAmount = quote.getMinOutputAmount();
 
-    if(tokenAmount >= 1) {
-      console.log("Token already owned.")
-      return;
-    } else {
-      console.log(`Swap ${giveAmount.toString()} ${giveToken.name} for at least ${recieveAmount.toNumber()} ${recieveToken.name}`);
-      const swapPayload = await pool.swap(owner, giveToken, giveAmount, recieveAmount);
-      const swapTxId = await swapPayload.execute();
-      console.log("Swapped:", swapTxId, "\n");
-      return swapTxId;
-    }
+    console.log(`Swap ${giveAmount.toString()} ${giveToken.name} for at least ${recieveAmount.toNumber()} ${recieveToken.name}`);
+    const swapPayload = await pool.swap(owner, giveToken, giveAmount, recieveAmount);
+    const swapTxId = await swapPayload.execute();
+    console.log("Swapped:", swapTxId, "\n");
+    return swapTxId;
   } catch (err) {
     console.warn(err);
   }
@@ -60,20 +54,36 @@ const trade = async (action, orca, connection) => {
 
   if (action == "buy") {
     const middlePool = await orca.getPool(OrcaPoolConfig.SOL_USDC);
-    // Middleman swap action to convert USDC to SOL
-    await swap(false, false, middlePool, orca, connection)
     const pool = await orca.getPool(OrcaPoolConfig.STEP_SOL);
-    // Main swap action to convert SOL to STEP
-    const swapTxId = await swap(false, true, pool, orca, connection)
-    return swapTxId;
+    const giveToken = pool.getTokenA();
+    const recieveToken = pool.getTokenB();
+    const tokenInfo = await connection.getParsedTokenAccountsByOwner(owner.publicKey, {mint: giveToken.mint}, {encoding: "jsonParsed"})
+    const tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+    if(tokenAmount < 1) {
+      // Middleman swap action to convert USDC to SOL
+      await swap(false, false, middlePool, orca, connection)
+      // Main swap action to convert SOL to STEP
+      const swapTxId = await swap(false, true, pool, orca, connection)
+      return swapTxId;
+    } else {
+      console.log(giveToken.name + " is already owned.")
+    }
   } else if (action == "sell") {
     const middlePool = await orca.getPool(OrcaPoolConfig.STEP_SOL);
-    // Middleman swap action to convert USDC to SOL
-    await swap(true, false, middlePool, orca, connection)
     const pool = await orca.getPool(OrcaPoolConfig.SOL_USDC);
-    // Main swap action to convert SOL to STEP
-    const swapTxId = await swap(true, true, pool, orca, connection)
-    return swapTxId;
+    const giveToken = pool.getTokenA();
+    const recieveToken = pool.getTokenB();
+    const tokenInfo = await connection.getParsedTokenAccountsByOwner(owner.publicKey, {mint: recieveToken.mint}, {encoding: "jsonParsed"})
+    const tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+    if(tokenAmount < 1) {
+      // Middleman swap action to convert USDC to SOL
+      await swap(true, false, middlePool, orca, connection)
+      // Main swap action to convert SOL to STEP
+      const swapTxId = await swap(true, true, pool, orca, connection)
+      return swapTxId;
+    } else {
+      console.log(recieveToken.name + " is already owned.")
+    }
   } else {
      console.log("The action " + action + " does not exist.")
   }
