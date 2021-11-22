@@ -50,6 +50,7 @@ action = []
 current = None
 returns = []
 purchase_date = None
+fee = 0.0085
 actionTable = PrettyTable()
 actionTable.field_names = ["Date", "Action", "Price", "Notes"]
 returnTable = PrettyTable()
@@ -62,25 +63,28 @@ while True:
     start = datetime.datetime.strptime("2021-11-01", "%Y-%m-%d")
     
     if purchase_date != None:
-        if df["timestamp"][len(df) - 1] > (purchase_date + datetime.timedelta(days=1)):
-            success = execute_js('index.js', "sell")
-            print(success)
-            newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], "Held to long."]
-            returnAction = [datetime.datetime.today(), (df["close"][len(df) - 1]/current) - 1]
-            actionTable.add_row(newAction)
-            returnTable.add_row(returnAction)
-            print("Held to long")
-            current = None
+        if df["timestamp"][len(df) - 1] > (purchase_date + datetime.timedelta(days=4)):
+            if current != None:
+                success = execute_js('index.js', "sell")
+                print(success)
+                newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], "Held to long."]
+                returnAction = [datetime.datetime.today(), ((df["close"][len(df) - 1]/current) - 1) - fee]
+                actionTable.add_row(newAction)
+                returnTable.add_row(returnAction)
+                print("Held to long. Breaking while loop. Please check token and relaunce to continue.")
+                current = None
+                break
     if df["one_day_growth"][len(df) - 1] >= np.quantile(df["one_day_growth"], 0.65):
         if current != None:
-            success = execute_js('index.js', "sell")
-            print(success)
-            newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], ""]
-            returnAction = [datetime.datetime.today(), (df["close"][len(df) - 1]/current) - 1]
-            actionTable.add_row(newAction)
-            returnTable.add_row(returnAction)
-            purchase_date = None
-            current = None
+            if (df["close"][len(df) - 1] * (1 + fee)) > current:
+                success = execute_js('index.js', "sell")
+                print(success)
+                newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], ""]
+                returnAction = [datetime.datetime.today(), ((df["close"][len(df) - 1]/current) - 1) - fee]
+                actionTable.add_row(newAction)
+                returnTable.add_row(returnAction)
+                purchase_date = None
+                current = None
     if df["one_day_growth"][len(df) - 1] <= np.quantile(df["one_day_growth"], 0.35):
         if current == None:
             success = execute_js('index.js', "buy")
