@@ -76,7 +76,7 @@ while True:
                 break
     if df["one_day_growth"][len(df) - 1] >= np.quantile(df["one_day_growth"], 0.65):
         if current != None:
-            if (df["close"][len(df) - 1] * (1 + fee)) > current:
+            if (df["close"][len(df) - 1]) > (current * (1 + fee)):
                 success = execute_js('index.js', "sell")
                 print(success)
                 newAction = [datetime.datetime.today(), "sell", df["close"][len(df) - 1], ""]
