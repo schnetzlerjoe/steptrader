@@ -35,7 +35,8 @@ const swap = async (recieveTokenB = false, giveTokenIsSOL = false, pool, orca, c
       const tokenAmount = await tokenInfo.value[0].account.data.parsed.info.tokenAmount.uiAmount;
       giveAmount = new Decimal(tokenAmount);
     }
-    const quote = await pool.getQuote(giveToken, giveAmount);
+    const slippage = new Decimal(0.0025)
+    const quote = await pool.getQuote(giveToken, giveAmount, slippage);
     const recieveAmount = quote.getMinOutputAmount();
 
     console.log(`Swap ${giveAmount.toString()} ${giveToken.name} for at least ${recieveAmount.toNumber()} ${recieveToken.name}`);
